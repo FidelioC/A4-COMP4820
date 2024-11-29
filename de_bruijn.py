@@ -66,7 +66,7 @@ def edit_graph_both_dont_exist(graph, kmer_1, kmer_2):
     graph[kmer_2] = {}
 
 
-def create_graph(all_kmers):
+def create_graph(curr_graph, all_kmers):
     """
     STEPS:
     1) Take contiguos pairs of k-mers. Vi, Vj, Eij
@@ -75,7 +75,7 @@ def create_graph(all_kmers):
         - if one of them: add either Vi or Vj to G.
         - if none: add Vi, Vj, Eij to G.
     """
-    graph = {}
+    graph = curr_graph
     index = 0
     check_result = None
     while index + 1 < len(all_kmers):
@@ -84,16 +84,16 @@ def create_graph(all_kmers):
         check_result = check_node_in_graph(graph, kmer_1, kmer_2)
         print(check_result)
         if check_result == (kmer_1, kmer_2):
-            print("Both exist")
+            # print("Both exist")
             edit_graph_both_exist(graph, kmer_1, kmer_2)
         elif check_result == (kmer_1, None):
-            print("kmer1 exist")
+            # print("kmer1 exist")
             edit_graph_kmer1_exist(graph, kmer_1, kmer_2)
         elif check_result == (None, kmer_2):
-            print("kmer2 exist")
+            # print("kmer2 exist")
             edit_graph_kmer2_exist(graph, kmer_1, kmer_2)
         else:
-            print("none exist")
+            # print("none exist")
             edit_graph_both_dont_exist(graph, kmer_1, kmer_2)
 
         print(f"kmer1: {kmer_1}, kmer2: {kmer_2}, graph: {graph}\n")
@@ -102,16 +102,28 @@ def create_graph(all_kmers):
     return graph
 
 
+def create_graph_all_reads(all_reads, k):
+    curr_graph = {}
+    for read in all_reads:
+        print(f"============= CURRENT READ {read} ============= \n")
+        print(f"graph: {curr_graph}")
+        kmers = create_possible_kmers(k, read)
+        curr_graph = create_graph(curr_graph, kmers)
+        print(f"KMERS: {kmers}")
+    return curr_graph
+
+
 def visualize_graph(graph: dict):
     dot = graphviz.Digraph(format="svg")
 
     for node, neighbours in graph.items():
         dot.node(node)
         for neighbour in neighbours:
+            weight = neighbours[neighbour]
             dot.node(neighbour)
-            dot.edge(node, neighbour)
+            dot.edge(node, neighbour, label=str(weight))
 
-    dot.render("de_bruijn_graph_custom")
+    dot.render("de_bruijn_graph_output")
 
 
 def main():
