@@ -1,5 +1,4 @@
 import graphviz
-import rich
 
 """'
 graph = {
