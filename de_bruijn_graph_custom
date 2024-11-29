@@ -1,0 +1,14 @@
+digraph {
+	ATCG
+	TCGA
+	ATCG -> TCGA
+	TCGA
+	CGAT
+	TCGA -> CGAT
+	CGAT
+	GATC
+	CGAT -> GATC
+	GATC
+	ATCG
+	GATC -> ATCG
+}
