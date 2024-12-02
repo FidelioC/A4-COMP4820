@@ -2,7 +2,7 @@ import de_bruijn
 
 
 def test_possible_kmers():
-    print(de_bruijn.create_possible_kmers(5, "AGCCGATCAT"))
+    print(de_bruijn.create_possible_kmers(5, "CCGATCATC"))
 
 
 def test_one_graph_read():
@@ -22,13 +22,126 @@ def test_all_graph_read():
         "GATCAAGGTCA",
     ]
     graph = de_bruijn.create_graph_all_reads(all_reads, 5)
-    de_bruijn.visualize_graph(graph)
+    # de_bruijn.visualize_graph(graph)
+    print(graph)
+    out_degree = de_bruijn.find_all_outdegree_zero(graph)
+    in_degree = de_bruijn.find_all_indegree_zero(graph)
+    print(f"total nodes: {len(graph)}")
+    print(f"out degree: {len(out_degree)}")
+    print(f"in degree: {len(in_degree)}")
+
+    de_bruijn.visualize_graph(graph, "./graph_output/class_example_output")
+
+
+def test_degree_zero():
+    all_reads = [
+        "AGCCGATCAT",
+        "CCGATCATC",
+        "GCCGAT",
+        "AGCCGA",
+        "GATCATGGTCA",
+        "GATCAAGGTCA",
+    ]
+    graph = de_bruijn.create_graph_all_reads(all_reads, 5)
+    out_degree = de_bruijn.find_all_outdegree_zero(graph)
+    in_degree = de_bruijn.find_all_indegree_zero(graph)
+    print(f"graph: {graph}")
+    print(f"out degree: {out_degree}")
+    print(f"in degree: {in_degree}")
+
+
+def test_graph_progress():
+    file_name = "./simulated-reads/covid.fasta_simulated-errors-tips.fq"
+    k = 37
+    graph = de_bruijn.progress(file_name, k)
+
+    out_degree = de_bruijn.find_all_outdegree_zero(graph)
+    in_degree = de_bruijn.find_all_indegree_zero(graph)
+    tip_outdegree, tip_indegree = de_bruijn.find_tip(graph, k)
+    print(f"total nodes: {len(graph)}")
+    print(f"out degree: {len(out_degree)}")
+    print(f"in degree: {len(in_degree)}")
+    print(f"graph: {graph}")
+    print(f"tip outdegree, tip indegree {tip_outdegree,tip_indegree}")
+    # de_bruijn.visualize_graph(graph, "./graph_output/graph_output_covidfq")
+
+
+def test_all_graph_errors():
+    all_reads = [
+        "AGCCGATCAT",
+        "CCGATCATC",
+        "GCCGAT",
+        "AGCCGA",
+        "GATCATGGTCA",
+        "GATCAAGGTCA",
+    ]
+    graph = de_bruijn.create_graph_all_reads(all_reads, 5)
+    # de_bruijn.visualize_graph(graph)
+    # print(graph)
+    out_degree = de_bruijn.find_all_outdegree_zero(graph)
+    in_degree = de_bruijn.find_all_indegree_zero(graph)
+    print(f"total nodes: {len(graph)}")
+    print(f"out degree: {len(out_degree)}")
+    print(f"in degree: {len(in_degree)}")
+
+    de_bruijn.visualize_graph(graph, "./graph_output/class_example_output")
+
+    de_bruijn.find_tip(graph)
+
+
+def test_possible_inoutgoing():
+    possible_outgoing = de_bruijn.generate_possible_outgoing("ATCAT")
+    print(f"possible_outgoing: {possible_outgoing}")
+    possible_ingoing = de_bruijn.generate_possible_ingoing("ATCAT")
+    print(f"possible_ingoing:{possible_ingoing}")
+
+
+def test_find_tips():
+    all_reads = [
+        "AGCCGATCAT",
+        "CCGATCATC",
+        "GCCGAT",
+        "AGCCGA",
+        "GATCATGGTCA",
+        "GATCAAGGTCA",
+    ]
+    graph = de_bruijn.create_graph_all_reads(all_reads, 5)
+    # de_bruijn.find_tip(graph)
+    de_bruijn.find_tip(graph, 5)
+
+
+def test_find_parent():
+    all_reads = [
+        "AGCCGATCAT",
+        "CCGATCATC",
+        "GCCGAT",
+        "AGCCGA",
+        "GATCATGGTCA",
+        "GATCAAGGTCA",
+    ]
+    graph = de_bruijn.create_graph_all_reads(all_reads, 5)
+
+    # print(de_bruijn.find_parent(graph, "GGTCA"))
+    all_nodes_indegree = de_bruijn.find_nodes_indegree(graph)
+    print(all_nodes_indegree)
+    print(de_bruijn.find_tip_traverse_parents(graph, "ATCAT", 1, 5, []))
+    print(
+        de_bruijn.find_tip_traverse_children(
+            graph, "AGCCG", 1, 5, [], all_nodes_indegree
+        )
+    )
 
 
 def main():
     # test_possible_kmers()
     # test_one_graph_read()
-    test_all_graph_read()
+    # test_all_graph_read()
+    # test_degree_zero()
+    test_graph_progress()
+    # test_all_graph_errors()
+    # test_possible_inoutgoing()
+    # test_find_tips()
+    # test_find_parent()
 
 
 if __name__ == "__main__":

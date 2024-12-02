@@ -1,0 +1,53 @@
+digraph {
+	AGCCG
+	GCCGA
+	AGCCG -> GCCGA [label=2]
+	GCCGA
+	CCGAT
+	GCCGA -> CCGAT [label=2]
+	CCGAT
+	CGATC
+	CCGAT -> CGATC [label=2]
+	CGATC
+	GATCA
+	CGATC -> GATCA [label=2]
+	GATCA
+	ATCAT
+	GATCA -> ATCAT [label=3]
+	ATCAA
+	GATCA -> ATCAA [label=1]
+	ATCAT
+	TCATC
+	ATCAT -> TCATC [label=1]
+	TCATG
+	ATCAT -> TCATG [label=1]
+	TCATC
+	TCATG
+	CATGG
+	TCATG -> CATGG [label=1]
+	CATGG
+	ATGGT
+	CATGG -> ATGGT [label=1]
+	ATGGT
+	TGGTC
+	ATGGT -> TGGTC [label=1]
+	TGGTC
+	GGTCA
+	TGGTC -> GGTCA [label=1]
+	GGTCA
+	ATCAA
+	TCAAG
+	ATCAA -> TCAAG [label=1]
+	TCAAG
+	CAAGG
+	TCAAG -> CAAGG [label=1]
+	CAAGG
+	AAGGT
+	CAAGG -> AAGGT [label=1]
+	AAGGT
+	AGGTC
+	AAGGT -> AGGTC [label=1]
+	AGGTC
+	GGTCA
+	AGGTC -> GGTCA [label=1]
+}
