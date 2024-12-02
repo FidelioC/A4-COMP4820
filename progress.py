@@ -20,7 +20,7 @@ with open(read_file) as reads:
         )
         for read in SeqIO.parse(reads, "fastq"):
             time.sleep(0.1)  # "work"
-            print(read)
+            print(read.seq)
             progress.update(task, advance=1)
 
 print(f"Processed {num_reads} reads.")
