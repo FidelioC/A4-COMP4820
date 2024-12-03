@@ -51,18 +51,23 @@ def test_degree_zero():
 
 
 def test_graph_progress():
-    file_name = "./simulated-reads/covid.fasta_simulated-allforward-errorfree.fq"
+    file_name = "./simulated-reads/covid.fasta_simulated-errors-tips.fq"
     k = 37
     graph = de_bruijn.progress(file_name, k)
 
     out_degree = de_bruijn.find_all_outdegree_zero(graph)
     in_degree = de_bruijn.find_all_indegree_zero(graph)
     tip_outdegree, tip_indegree = de_bruijn.find_tip(graph, k)
+
     print(f"total nodes: {len(graph)}")
     print(f"out degree: {len(out_degree)}")
     print(f"in degree: {len(in_degree)}")
     # print(f"graph: {graph}")
-    print(f"tip outdegree, tip indegree {tip_outdegree,tip_indegree}")
+    # print(f"tip outdegree, tip indegree {tip_outdegree,tip_indegree}")
+    graph, total_prune_outdegree, total_prune_indegree = (
+        de_bruijn.remove_graph_all_tips(graph, k)
+    )
+    print(f"pruned {total_prune_outdegree + total_prune_indegree} nodes")
     # de_bruijn.visualize_graph(graph, "./graph_output/graph_output_covidfq")
 
 
@@ -105,14 +110,8 @@ def test_find_tips():
         "GATCATGGTCA",
         "GATCAAGGTCA",
     ]
-    all_read_tips = ["AAGCCGATCAT", "CTCGGATCA", "ATCATCG", "ATCATGGTCA"]
-    graph = de_bruijn.create_graph_all_reads(all_read_tips, 5)
-    # print(de_bruijn.find_tip(graph, 5))
-    graph, total_prune_outdegree, total_prune_indegree = (
-        de_bruijn.remove_graph_all_tips(graph, 5)
-    )
-
-    print(f"pruned {total_prune_outdegree + total_prune_indegree} nodes")
+    graph = de_bruijn.create_graph_all_reads(all_reads, 5)
+    print(de_bruijn.find_tip(graph, 5))
 
     de_bruijn.visualize_graph(graph, "./test_graph_tip")
 
@@ -139,6 +138,52 @@ def test_find_parent():
     )
 
 
+def test_remove_all_tips():
+    all_read_tips = ["AAGCCGATCAT", "CTCGGATCA", "ATCATCG", "ATCATGGTCA"]
+    graph = de_bruijn.create_graph_all_reads(all_read_tips, 5)
+    graph, total_prune_outdegree, total_prune_indegree = (
+        de_bruijn.remove_graph_all_tips(graph, 5)
+    )
+
+    print(f"pruned {total_prune_outdegree + total_prune_indegree} nodes")
+
+    de_bruijn.visualize_graph(graph, "./test_graph_tip")
+
+
+def test_out_degree_greater_zero():
+    all_read_tips = [
+        "AAGCCGATCAT",
+        "CTCGGATCA",
+        "ATCATCGGTCA",
+        "ATCATGGTCA",
+        "GATCAAGGTCA",
+    ]
+    graph = de_bruijn.create_graph_all_reads(all_read_tips, 5)
+
+    print(de_bruijn.find_all_outdegree_greater_zero(graph))
+
+
+def test_remove_bubbles():
+    all_read_tips = [
+        "AAGCCGATCAT",
+        "CTCGGATCA",
+        "ATCATCGGTCA",
+        "ATCATGGTCA",
+        "GATCAAGGTCA",
+    ]
+    graph = de_bruijn.create_graph_all_reads(all_read_tips, 5)
+    # print(graph)
+    # graph, total_prune_outdegree, total_prune_indegree = (
+    #     de_bruijn.remove_graph_all_tips(graph, 5)
+    # )
+
+    # print(f"pruned {total_prune_outdegree + total_prune_indegree} nodes")
+
+    print(de_bruijn.traverse_find_bubble(graph, "GATCA"))
+    # print(de_bruijn.find_bubble(graph))
+    de_bruijn.visualize_graph(graph, "./test_graph_tip")
+
+
 def main():
     # test_possible_kmers()
     # test_one_graph_read()
@@ -147,8 +192,11 @@ def main():
     # test_graph_progress()
     # test_all_graph_errors()
     # test_possible_inoutgoing()
-    test_find_tips()
+    # test_find_tips()
     # test_find_parent()
+    # test_remove_all_tips()
+    # test_out_degree_greater_zero()
+    test_remove_bubbles()
 
 
 if __name__ == "__main__":
