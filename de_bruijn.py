@@ -171,7 +171,7 @@ def visualize_graph(graph: dict, output_file):
     dot.render(output_file)
 
 
-# =============== errors ====================
+# =============== errors tip ====================
 def find_tip(graph, k):
     """find all tip nodes in the graph"""
     nodes_indegree_zero = find_all_indegree_zero(graph)
@@ -201,7 +201,7 @@ def remove_graph_all_tips(graph, k):
         # print(f"tips: {tip_outdegree, tip_indegree}")
         graph = remove_tip_indegree(tip_indegree, graph)
         graph = remove_tip_outdegree(tip_outdegree, graph)
-        visualize_graph(graph, "./test_graph_tip")
+        # visualize_graph(graph, "./test_graph_tip")
         tip_outdegree, tip_indegree = find_tip(
             graph, k
         )  # find another possible tips in the graph
@@ -218,6 +218,7 @@ def remove_tip_outdegree(tip_outdegree, graph):
     (we will have to edit the parent's node, where the edge is pointing to this node)
     """
     for tip in tip_outdegree:
+        # print(f"removing tip outdegree {tip}")
         parents = find_parent(graph, tip)
         for parent in parents:
             del graph[parent][tip]  # delete the parent's edge pointing to the tip
@@ -229,6 +230,7 @@ def remove_tip_outdegree(tip_outdegree, graph):
 def remove_tip_indegree(tip_indegree, graph):
     """remove tips that has indegree 0"""
     for tip in tip_indegree:
+        # print(f"removing tip indegree {tip}")
         del graph[tip]
 
     return graph
@@ -334,8 +336,56 @@ def find_parent(graph, target_node):
     return all_parents
 
 
+# ============= errors bubbles =============
+def remove_bubble(graph):
+    potential_bubbles = find_bubble(graph)
+
+
 def find_bubble(graph):
-    """"""
+    """find potential bubbles in nodes with outdegree > 1"""
+    potential_bubbles = {}
+    outdegree_greater_zero = find_all_outdegree_greater_zero(graph)
+    for node in outdegree_greater_zero:
+        result = traverse_find_bubble(graph, node)
+        potential_bubbles[node] = result
+
+    return potential_bubbles
+
+
+def traverse_find_bubble(graph, curr_node, path=[], paths_end={}):
+    """given a node (outdegree > 1), will traverse the graph,
+    see if the path ends in the same node"""
+    path.append(curr_node)
+
+    curr_node_children = graph[curr_node]
+
+    for child in curr_node_children:
+        if child in paths_end:  # if have reached common nodes
+            # append the previous path with the current child
+            paths_end[child].append(path + [child])
+            if len(paths_end[child]) > 1:
+                return paths_end[child]
+
+        else:  # else, haven't reached common nodes, just keep recording the path for now
+            paths_end[child] = [path + [child]]
+        # print(paths_end)
+        result = traverse_find_bubble(graph, child, path[:], paths_end)
+        if result:
+            return result
+
+    return None
+
+
+def find_all_outdegree_greater_zero(graph):
+    """
+    find all nodes that have outdegree greater than zero
+    """
+    outdegree_greater_zero = []
+    for node, neighbours in graph.items():
+        if len(neighbours) > 1:
+            outdegree_greater_zero.append(node)
+
+    return outdegree_greater_zero
 
 
 # =============== contigs ===================
