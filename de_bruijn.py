@@ -189,6 +189,51 @@ def find_tip(graph, k):
     return tip_outdegree, tip_indegree
 
 
+def remove_graph_all_tips(graph, k):
+    """remove tips from the graph"""
+    tip_outdegree, tip_indegree = find_tip(graph, k)
+
+    total_prune_outdegree = len(tip_outdegree)
+    total_prune_indegree = len(tip_indegree)
+    total_tips = total_prune_outdegree + total_prune_indegree
+
+    while total_tips > 0:  # while tip still exist in the graph
+        # print(f"tips: {tip_outdegree, tip_indegree}")
+        graph = remove_tip_indegree(tip_indegree, graph)
+        graph = remove_tip_outdegree(tip_outdegree, graph)
+        visualize_graph(graph, "./test_graph_tip")
+        tip_outdegree, tip_indegree = find_tip(
+            graph, k
+        )  # find another possible tips in the graph
+
+        total_prune_outdegree += len(tip_outdegree)
+        total_prune_indegree += len(tip_indegree)
+        total_tips = len(tip_outdegree) + len(tip_indegree)
+
+    return graph, total_prune_outdegree, total_prune_indegree
+
+
+def remove_tip_outdegree(tip_outdegree, graph):
+    """remove tips that has outdegree 0
+    (we will have to edit the parent's node, where the edge is pointing to this node)
+    """
+    for tip in tip_outdegree:
+        parents = find_parent(graph, tip)
+        for parent in parents:
+            del graph[parent][tip]  # delete the parent's edge pointing to the tip
+        del graph[tip]  # delete the tip itself
+
+    return graph
+
+
+def remove_tip_indegree(tip_indegree, graph):
+    """remove tips that has indegree 0"""
+    for tip in tip_indegree:
+        del graph[tip]
+
+    return graph
+
+
 def find_tip_indegree_zero(graph, nodes_indegree_zero, k):
     """find indegree tips"""
     tip_path = []  # might be used later
@@ -197,7 +242,7 @@ def find_tip_indegree_zero(graph, nodes_indegree_zero, k):
     for node in nodes_indegree_zero:
         tip_path = []
         tip_path = find_tip_traverse_children(
-            graph, node, 0, k, tip_path, all_nodes_indegree
+            graph, node, 1, k, tip_path, all_nodes_indegree
         )
         if tip_path:
             tip_nodes.append(node)
@@ -232,7 +277,7 @@ def find_tip_outdegree_zero(graph, nodes_outdegree_zero, k):
     tip_nodes = []
     for node in nodes_outdegree_zero:
         tip_path = []
-        tip_path = find_tip_traverse_parents(graph, node, 0, k, tip_path)
+        tip_path = find_tip_traverse_parents(graph, node, 1, k, tip_path)
         if tip_path:
             tip_nodes.append(node)
     return tip_nodes
@@ -291,6 +336,9 @@ def find_parent(graph, target_node):
 
 def find_bubble(graph):
     """"""
+
+
+# =============== contigs ===================
 
 
 # =============== progress ==================
