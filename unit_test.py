@@ -101,21 +101,6 @@ def test_possible_inoutgoing():
     print(f"possible_ingoing:{possible_ingoing}")
 
 
-def test_find_tips():
-    all_reads = [
-        "AGCCGATCAT",
-        "CCGATCATC",
-        "GCCGAT",
-        "AGCCGA",
-        "GATCATGGTCA",
-        "GATCAAGGTCA",
-    ]
-    graph = de_bruijn.create_graph_all_reads(all_reads, 5)
-    print(de_bruijn.find_tip(graph, 5))
-
-    de_bruijn.visualize_graph(graph, "./test_graph_tip")
-
-
 def test_find_parent():
     all_reads = [
         "AGCCGATCAT",
@@ -129,13 +114,24 @@ def test_find_parent():
 
     # print(de_bruijn.find_parent(graph, "GGTCA"))
     all_nodes_indegree = de_bruijn.find_nodes_indegree(graph)
-    print(all_nodes_indegree)
-    print(de_bruijn.find_tip_traverse_parents(graph, "ATCAT", 1, 5, []))
+    # print(all_nodes_indegree)
+    print(f"ATCAT: {de_bruijn.find_tip_traverse_parents(graph, 'ATCAT', 1, 5, [])}")
+    print(f"TCATC: {de_bruijn.find_tip_traverse_parents(graph, 'TCATC', 1, 5, [])}")
     print(
         de_bruijn.find_tip_traverse_children(
             graph, "AGCCG", 1, 5, [], all_nodes_indegree
         )
     )
+    de_bruijn.visualize_graph(graph, "./test_graph_tip")
+
+
+def test_find_tips():
+    all_reads = ["AAGCCGATCAT", "CTCGGATCA", "ATCATCG", "ATCATGGTCA"]
+
+    graph = de_bruijn.create_graph_all_reads(all_reads, 5)
+    print(de_bruijn.find_tip(graph, 5))
+
+    de_bruijn.visualize_graph(graph, "./test_graph_tip")
 
 
 def test_remove_all_tips():
@@ -180,16 +176,37 @@ def test_find_bubbles():
 
     # print(f"pruned {total_prune_outdegree + total_prune_indegree} nodes")
 
-    print(de_bruijn.traverse_find_bubble_iterative(graph, "ATCAT"))
-    print(de_bruijn.traverse_find_bubble_iterative(graph, "GATCA"))
-    print(de_bruijn.traverse_find_bubble_iterative(graph, "AAGCC"))
+    print(de_bruijn.traverse_find_bubble_iterative(graph, "ATCAT"))  # has bubbles
+    print(de_bruijn.traverse_find_bubble_iterative(graph, "GATCA"))  # has bubbles
+    print(de_bruijn.traverse_find_bubble_iterative(graph, "AAGCC"))  # no bubble
     print("\n")
     print(f"all bubbles: {de_bruijn.find_bubble(graph)}")
     de_bruijn.visualize_graph(graph, "./test_graph_tip")
 
 
+def test_find_highest_weight_children():
+    children = {"ATCAA": 1, "ATCAT": 3, "TTTTT": 5}
+    max_weight = de_bruijn.find_highest_weight_children(children)
+    print(max_weight)
+
+
 def test_remove_bubbles():
-    """"""
+    all_read_tips = [
+        "AAGCCGATCAT",
+        "CTCGGATCA",
+        "ATCATCGGTCA",
+        "ATCATGGTCA",
+        "GATCAAGGTCA",  # bubble GATCA
+        "GGTCACG",
+        "GATCAT",  # this will make GATCA -> ATCAT weight = 2
+        "GATCATG",  # this will make GATCA -> ATCAT weight = 3 and ATCAT -> TCATG weight = 2
+    ]
+    graph = de_bruijn.create_graph_all_reads(all_read_tips, 5)
+
+    print(de_bruijn.remove_bubble(graph))
+    # print(de_bruijn.find_tip(graph, 5))
+
+    de_bruijn.visualize_graph(graph, "./test_graph")
 
 
 def main():
@@ -204,7 +221,8 @@ def main():
     # test_find_parent()
     # test_remove_all_tips()
     # test_out_degree_greater_zero()
-    test_find_bubbles()
+    # test_find_bubbles()
+    # test_find_highest_weight_children()
     test_remove_bubbles()
 
 

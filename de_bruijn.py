@@ -294,7 +294,7 @@ def find_tip_traverse_parents(graph, node, depth, k, path: list):
     parents = find_parent(graph, node)
     # print(f"parents: {parents}")
     for parent in parents:
-        curr_parent_outdegree = len(graph[parent])
+        curr_parent_outdegree = get_node_outdegree(graph, node)
         if curr_parent_outdegree > 1:
             path.append(parent)
             return path
@@ -339,10 +339,34 @@ def find_parent(graph, target_node):
 # ============= errors bubbles =============
 def remove_bubble(graph):
     potential_bubbles = find_bubble(graph)
+    print(f"potential bubbles: {potential_bubbles}")
+    for bubble in potential_bubbles:
+        max_child = find_highest_weight_children(graph[bubble])
+        print(f"bubble: {bubble}, max_child: {max_child}")
+
+
+def find_highest_weight_children(children: dict):
+    """
+    return the children with the highest weight
+    e.g., "ATCAT"
+    """
+    max_weight = 0
+    max_node = None
+    curr_weight = 0
+    for children, weight in children.items():
+        curr_weight = weight
+        if curr_weight > max_weight:
+            max_weight = curr_weight
+            max_node = children
+
+    return max_node
 
 
 def find_bubble(graph):
-    """find potential bubbles in nodes with outdegree > 1"""
+    """
+    find potential bubbles in nodes with outdegree > 1
+    return value: dict of bubbles, where key: (startbubble node, end bubble node)
+    """
     potential_bubbles = {}
     outdegree_greater_zero = find_all_outdegree_greater_zero(graph)
     for node in outdegree_greater_zero:
@@ -353,22 +377,21 @@ def find_bubble(graph):
 
 
 def traverse_find_bubble_iterative(graph, start_node):
-    # Define the BFS function
-    visited = []  # List to keep track of visited nodes
-    queue = deque([start_node])  # Initialize the queue with the starting node
+    visited = []  # track visited nodes
+    queue = deque([start_node])  # init queue
     end_node = None
-    while queue:  # While there are still nodes to process
-        node = queue.popleft()  # Dequeue a node from the front of the queue
+    while queue:  # while nodes still exist to be processed
+        node = queue.popleft()  # dequeue
 
-        if node not in visited:  # Check if the node has been visited
-            visited.append(node)  # Mark the node as visited
-            # print(node, end=" ")  # Output the visited node
+        if node not in visited:  # check if node has been visited before
+            visited.append(node)
+            # print(node, end=" ")
 
-            # Enqueue all unvisited neighbors (children) of the current node
+            # enqueue children of curr node
             for neighbor in graph[node]:
                 if neighbor not in visited:
-                    queue.append(neighbor)  # Add unvisited neighbors to the queue
-        else:
+                    queue.append(neighbor)
+        else:  # node merged back
             end_node = node
             # print(f"node {node} has been visited")
             return (start_node, end_node)
@@ -386,6 +409,10 @@ def find_all_outdegree_greater_zero(graph):
             outdegree_greater_zero.append(node)
 
     return outdegree_greater_zero
+
+
+def get_node_outdegree(graph, node):
+    return len(graph[node])
 
 
 # =============== contigs ===================
