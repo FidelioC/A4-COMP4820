@@ -52,6 +52,8 @@ digraph {
 	GGTCA
 	CGGTC -> GGTCA [label=1]
 	GGTCA
+	GTCAC
+	GGTCA -> GTCAC [label=1]
 	TCATG
 	CATGG
 	TCATG -> CATGG [label=1]
@@ -79,4 +81,8 @@ digraph {
 	AGGTC
 	GGTCA
 	AGGTC -> GGTCA [label=1]
+	GTCAC
+	TCACG
+	GTCAC -> TCACG [label=1]
+	TCACG
 }

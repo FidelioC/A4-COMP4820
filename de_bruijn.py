@@ -1,6 +1,6 @@
 import graphviz
 import sys, time
-
+from collections import deque
 from rich.progress import Progress
 from Bio import SeqIO
 
@@ -346,32 +346,32 @@ def find_bubble(graph):
     potential_bubbles = {}
     outdegree_greater_zero = find_all_outdegree_greater_zero(graph)
     for node in outdegree_greater_zero:
-        result = traverse_find_bubble(graph, node)
+        result = traverse_find_bubble_iterative(graph, node)
         potential_bubbles[node] = result
 
     return potential_bubbles
 
 
-def traverse_find_bubble(graph, curr_node, path=[], paths_end={}):
-    """given a node (outdegree > 1), will traverse the graph,
-    see if the path ends in the same node"""
-    path.append(curr_node)
+def traverse_find_bubble_iterative(graph, start_node):
+    # Define the BFS function
+    visited = []  # List to keep track of visited nodes
+    queue = deque([start_node])  # Initialize the queue with the starting node
+    end_node = None
+    while queue:  # While there are still nodes to process
+        node = queue.popleft()  # Dequeue a node from the front of the queue
 
-    curr_node_children = graph[curr_node]
+        if node not in visited:  # Check if the node has been visited
+            visited.append(node)  # Mark the node as visited
+            # print(node, end=" ")  # Output the visited node
 
-    for child in curr_node_children:
-        if child in paths_end:  # if have reached common nodes
-            # append the previous path with the current child
-            paths_end[child].append(path + [child])
-            if len(paths_end[child]) > 1:
-                return paths_end[child]
-
-        else:  # else, haven't reached common nodes, just keep recording the path for now
-            paths_end[child] = [path + [child]]
-        # print(paths_end)
-        result = traverse_find_bubble(graph, child, path[:], paths_end)
-        if result:
-            return result
+            # Enqueue all unvisited neighbors (children) of the current node
+            for neighbor in graph[node]:
+                if neighbor not in visited:
+                    queue.append(neighbor)  # Add unvisited neighbors to the queue
+        else:
+            end_node = node
+            # print(f"node {node} has been visited")
+            return (start_node, end_node)
 
     return None
 

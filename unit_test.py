@@ -163,13 +163,14 @@ def test_out_degree_greater_zero():
     print(de_bruijn.find_all_outdegree_greater_zero(graph))
 
 
-def test_remove_bubbles():
+def test_find_bubbles():
     all_read_tips = [
         "AAGCCGATCAT",
         "CTCGGATCA",
         "ATCATCGGTCA",
         "ATCATGGTCA",
         "GATCAAGGTCA",
+        "GGTCACG",
     ]
     graph = de_bruijn.create_graph_all_reads(all_read_tips, 5)
     # print(graph)
@@ -179,9 +180,16 @@ def test_remove_bubbles():
 
     # print(f"pruned {total_prune_outdegree + total_prune_indegree} nodes")
 
-    print(de_bruijn.traverse_find_bubble(graph, "GATCA"))
-    # print(de_bruijn.find_bubble(graph))
+    print(de_bruijn.traverse_find_bubble_iterative(graph, "ATCAT"))
+    print(de_bruijn.traverse_find_bubble_iterative(graph, "GATCA"))
+    print(de_bruijn.traverse_find_bubble_iterative(graph, "AAGCC"))
+    print("\n")
+    print(f"all bubbles: {de_bruijn.find_bubble(graph)}")
     de_bruijn.visualize_graph(graph, "./test_graph_tip")
+
+
+def test_remove_bubbles():
+    """"""
 
 
 def main():
@@ -196,6 +204,7 @@ def main():
     # test_find_parent()
     # test_remove_all_tips()
     # test_out_degree_greater_zero()
+    test_find_bubbles()
     test_remove_bubbles()
 
 
