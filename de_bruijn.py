@@ -3,6 +3,7 @@ import sys, time
 from collections import deque
 from rich.progress import Progress
 from Bio import SeqIO
+from Bio.Seq import Seq
 
 ALL_POSSIBLE_CHARS = ["A", "C", "G", "T"]
 
@@ -76,6 +77,7 @@ def edit_graph_both_exist(graph, kmer_1, kmer_2):
 
 
 def edit_graph_kmer1_exist(graph, kmer_1, kmer_2):
+    # if kmer1 exist, we want to make a new node (kmer2), and points kmer1 to kmer2
     if kmer_2 not in graph[kmer_1]:
         graph[kmer_1][kmer_2] = 1
     else:
@@ -84,11 +86,9 @@ def edit_graph_kmer1_exist(graph, kmer_1, kmer_2):
 
 
 def edit_graph_kmer2_exist(graph, kmer_1, kmer_2):
-    if kmer_1 not in graph[kmer_2]:
-        graph[kmer_2][kmer_1] = 1
-    else:
-        graph[kmer_2][kmer_1] += 1
+    # if kmer2 exist, we want to make a new node, and kmer1 points to kmer2
     graph[kmer_1] = {}
+    graph[kmer_1][kmer_2] = 1
 
 
 def edit_graph_both_dont_exist(graph, kmer_1, kmer_2):
@@ -142,19 +142,6 @@ def create_graph(curr_graph, all_kmers):
         # print(graph)
 
     return graph
-
-
-def create_graph_all_reads(all_reads, k):
-    curr_graph = {}
-    # dot = graphviz.Digraph(format="svg")
-    for read in all_reads:
-        # print(f"============= CURRENT READ {read} ============= \n")
-        # print(f"graph: {curr_graph}")
-        kmers = create_possible_kmers(k, read)
-        curr_graph = create_graph(curr_graph, kmers)
-        # print(f"KMERS: {kmers}")
-    # dot.render("de_bruijn_graph_output")
-    return curr_graph
 
 
 def visualize_graph(graph: dict, output_file):
@@ -343,11 +330,11 @@ def remove_bubble(graph, k):
     potential_bubbles = find_bubble(graph, k)
     # loop until there's no more bubbles
     while len(potential_bubbles) > 0:
-        print(f"potential bubbles: {potential_bubbles}")
+        # print(f"potential bubbles: {potential_bubbles}")
         for bubble in potential_bubbles:
             # find edge w/ lowest weight
             min_child = find_lowest_weight_children(graph[bubble])
-            print(f"bubble: {bubble}, min_child: {min_child}")
+            # print(f"bubble: {bubble}, min_child: {min_child}")
 
             # delete the edge w/ lowest weight
             graph = remove_node_from_graph(min_child, graph)
@@ -359,7 +346,7 @@ def remove_bubble(graph, k):
             )
 
             total_bubbles_removed += total_prune_indegree + total_prune_outdegree
-        print(f"graph after removing bubble: {graph}")
+        # print(f"graph after removing bubble: {graph}")
         # repeat until no bubbles exist
         potential_bubbles = find_bubble(graph, k)
 
@@ -391,10 +378,10 @@ def find_bubble(graph, k):
     potential_bubbles = {}
     result = None
     outdegree_greater_zero = find_all_outdegree_greater_zero(graph)
-    print(f"outdegree_greater_zero {outdegree_greater_zero}")
+    # print(f"outdegree_greater_zero {outdegree_greater_zero}")
     for node in outdegree_greater_zero:
         if node in graph:
-            print(f"\nNode: {node}\n")
+            # print(f"\nNode: {node}\n")
             result = traverse_find_bubble_iterative(graph, node, k)
         if result:
             potential_bubbles[node] = result
@@ -408,8 +395,7 @@ def traverse_find_bubble_iterative(graph, start_node, k):
     visited = []  # track visited nodes
     queue = deque([start_node])  # init queue
     end_node = None
-    count = 0
-    # while nodes still exist to be processed or if count < k (to break any potential cycles)
+    # while nodes still exist to be processed
     while queue:
         node = queue.popleft()  # dequeue
 
@@ -419,20 +405,18 @@ def traverse_find_bubble_iterative(graph, start_node, k):
 
             # enqueue children of curr node
             for neighbor in graph[node]:
-                if neighbor not in visited:
-                    queue.append(neighbor)
+                queue.append(neighbor)
         else:  # node merged back
             end_node = node
             # print(f"node {node} has been visited")
             return (start_node, end_node)
 
-        count += 1
     return None
 
 
 def find_all_outdegree_greater_zero(graph):
     """
-    find all nodes that have outdegree greater than zero
+    find all nodes that have outdegree greater than one
     """
     outdegree_greater_zero = []
     for node, neighbours in graph.items():
@@ -471,7 +455,32 @@ def remove_all_errors(graph, k):
 
 
 # =============== progress ==================
-def progress(read_file, k):
+def create_graph_list_reads(all_reads, k):
+    curr_graph = {}
+    # dot = graphviz.Digraph(format="svg")
+    for read in all_reads:
+        # print(f"============= CURRENT READ {read} ============= \n")
+        # print(f"graph: {curr_graph}")
+        curr_graph = create_graph_two_read(curr_graph, read, k)
+        # print(f"KMERS: {kmers}")
+    # dot.render("de_bruijn_graph_output")
+    return curr_graph
+
+
+def create_graph_two_read(graph, read, k):
+    to_seq = Seq(read)
+    kmers = create_possible_kmers(k, str(to_seq))
+    # print(f"kmers len: {len(kmers)}")
+    graph = create_graph(graph, kmers)
+
+    # reverse_kmers = create_possible_kmers(k, str(to_seq.reverse_complement()))
+    # print(f"kmers len: {len(kmers)}")
+    # graph = create_graph(graph, reverse_kmers)
+
+    return graph
+
+
+def create_graph_file_reads(read_file, k):
     curr_graph = {}
     with open(read_file) as reads:
         # Count all records in the file so we know to track
@@ -488,16 +497,7 @@ def progress(read_file, k):
             )
             for read in SeqIO.parse(reads, "fastq"):
                 # print(f"read len: {len(read)}")
-                kmers = create_possible_kmers(k, str(read.seq))
-                # print(f"kmers len: {len(kmers)}")
-                curr_graph = create_graph(curr_graph, kmers)
-
-                revere_kmers = create_possible_kmers(
-                    k, str(read.seq.reverse_complement())
-                )
-                # print(f"kmers len: {len(kmers)}")
-                curr_graph = create_graph(curr_graph, revere_kmers)
-
+                create_graph_two_read(curr_graph, read.seq, k)
                 progress.update(task, advance=1)
 
     print(f"Processed {num_reads} reads.")
