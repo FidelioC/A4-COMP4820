@@ -238,7 +238,7 @@ def test_remove_all_errors():
     ]
     k_file = 37
     # k_list = 5
-    file_name = "./simulated-reads/covid.fasta_simulated-errors-tips.fq"
+    file_name = "./simulated-reads/covid.fq"
     # graph = de_bruijn.create_graph_list_reads(all_read_tips, k_file)
     graph = de_bruijn.create_graph_file_reads(file_name, k_file)
     # de_bruijn.visualize_graph(graph, "./graph_before_error_removal")
@@ -256,13 +256,22 @@ def test_remove_all_errors():
         graph, k_file
     )
 
-    print(
-        f"final all_outdegree greater zero: {de_bruijn.find_all_outdegree_greater_zero(graph)}"
-    )
+    out_degree = de_bruijn.find_all_outdegree_zero(graph)
+    in_degree = de_bruijn.find_all_indegree_zero(graph)
+
     print(
         f"total_tips_pruned {total_tips_pruned}, total_bubbles_removed {total_bubbles_removed}"
     )
-    de_bruijn.visualize_graph(graph, "./test_graph")
+
+    print(f"total nodes: {len(graph)}")
+    print(f"out degree: {len(out_degree)}")
+    print(f"in degree: {len(in_degree)}")
+
+    contigs = de_bruijn.create_contigs(graph)
+
+    print(f"contigs: {len(contigs)}")
+    de_bruijn.write_contigs(contigs)
+    # de_bruijn.visualize_graph(graph, "./test_graph")
 
 
 def main():

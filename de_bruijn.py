@@ -4,6 +4,9 @@ from collections import deque
 from rich.progress import Progress
 from Bio import SeqIO
 from Bio.Seq import Seq
+import os
+import click
+from resource import getrusage, RUSAGE_SELF
 
 ALL_POSSIBLE_CHARS = ["A", "C", "G", "T"]
 
@@ -452,9 +455,37 @@ def remove_all_errors(graph, k):
 
 
 # =============== contigs ===================
+def create_contigs(graph: dict):
+    contigs = {}
+    contig_id = 1
+    indegree_zero = find_all_indegree_zero(graph)
+
+    for node in indegree_zero:
+        curr_node = node
+        contig = curr_node
+        while get_node_outdegree(graph, curr_node) >= 1:
+            neighbours = graph[curr_node]
+            next_node = max(neighbours, key=neighbours.get)
+            contig += next_node[-1]  # add last char to contig
+            curr_node = next_node
+
+        contigs[contig_id] = contig
+
+        contig_id += 1
+
+    return contigs
 
 
-# =============== progress ==================
+def write_contigs(contigs: dict):
+    for id, contig in contigs.items():
+        filename = os.path.join(f"{id}-covid.fq")
+        with open(filename, "w") as fastq_file:
+            fastq_file.write(f"@{id}-covid\n")
+            fastq_file.write(f"{contig}\n")  # sequence
+            fastq_file.write("+\n")
+
+
+# =============== file/ read processing ==================
 def create_graph_list_reads(all_reads, k):
     curr_graph = {}
     # dot = graphviz.Digraph(format="svg")
@@ -473,9 +504,9 @@ def create_graph_two_read(graph, read, k):
     # print(f"kmers len: {len(kmers)}")
     graph = create_graph(graph, kmers)
 
-    # reverse_kmers = create_possible_kmers(k, str(to_seq.reverse_complement()))
+    reverse_kmers = create_possible_kmers(k, str(to_seq.reverse_complement()))
     # print(f"kmers len: {len(kmers)}")
-    # graph = create_graph(graph, reverse_kmers)
+    graph = create_graph(graph, reverse_kmers)
 
     return graph
 
@@ -500,13 +531,93 @@ def create_graph_file_reads(read_file, k):
                 create_graph_two_read(curr_graph, read.seq, k)
                 progress.update(task, advance=1)
 
-    print(f"Processed {num_reads} reads.")
+    # print(f"Processed {num_reads} reads.")
 
-    return curr_graph
+    return curr_graph, num_reads
 
 
-def main():
-    print(create_possible_kmers(5, "AGCCGATCAT"))
+# =============== print output ===========================
+def mem_usage():
+    # 'maxrss' is the maximum resident set size
+    max_memory = getrusage(RUSAGE_SELF).ru_maxrss
+    print(f"* Maximum resident set size (memory usage): {max_memory}kb")
+
+
+def print_output(
+    total_read,
+    init_nodes,
+    init_input_nodes,
+    init_output_nodes,
+    pruned_tips,
+    input_nodes_remain,
+    output_nodes_remain,
+    removed_bubbles,
+    contigs: dict,
+):
+    print("Output")
+    print("======")
+
+    print(f"\n* Added {total_read} reads to the graph.")
+    print(f"* Graph has:")
+    print(f"\t* {init_nodes} total nodes.")
+    print(f"\t* {init_input_nodes} input nodes.")
+    print(f"\t* {init_output_nodes} output nodes.")
+
+    print(f"\n* Pruned {pruned_tips} nodes.")
+    print(f"\t* {input_nodes_remain} input nodes remain.")
+    print(f"\t* {output_nodes_remain} output nodes remain.")
+    print(f"\t* Removed {removed_bubbles} nodes in bubbles.")
+    print(f"* Reconstructed {len(contigs)} sequences:")
+
+    for id, contig in contigs.items():
+        print(f"* {id}-covid.fq ({len(contig)}bp)")
+
+    mem_usage()
+
+
+def print_settings(reads, kmer_size):
+    print("Settings")
+    print("========")
+
+    print(f"\n* Reads: {reads}")
+    print(f"* k:     {kmer_size}\n")
+
+
+@click.command()
+@click.option("--reads", required=True)
+@click.option("--kmer-size", default=37)
+def main(reads, kmer_size):
+    k_file = kmer_size
+    file_name = reads
+
+    print_settings(reads, kmer_size)
+
+    graph, total_read = create_graph_file_reads(file_name, k_file)
+
+    init_nodes = len(graph)
+    init_input_nodes = len(find_all_indegree_zero(graph))
+    init_output_nodes = len(find_all_outdegree_zero(graph))
+
+    graph, pruned_tips, removed_bubbles = remove_all_errors(graph, k_file)
+
+    output_nodes_remain = len(find_all_outdegree_zero(graph))
+    input_nodes_remain = len(find_all_indegree_zero(graph))
+
+    contigs = create_contigs(graph)
+
+    write_contigs(contigs)
+
+    print_output(
+        total_read,
+        init_nodes,
+        init_input_nodes,
+        init_output_nodes,
+        pruned_tips,
+        input_nodes_remain,
+        output_nodes_remain,
+        removed_bubbles,
+        contigs,
+    )
 
 
 if __name__ == "__main__":
