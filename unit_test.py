@@ -51,7 +51,7 @@ def test_degree_zero():
 
 
 def test_graph_progress():
-    file_name = "./simulated-reads/covid.fasta_simulated-errors-tips.fq"
+    file_name = "./simulated-reads/covid.fasta_simulated-errors-bubbles.fq"
     k = 37
     graph = de_bruijn.progress(file_name, k)
 
@@ -64,10 +64,11 @@ def test_graph_progress():
     print(f"in degree: {len(in_degree)}")
     # print(f"graph: {graph}")
     # print(f"tip outdegree, tip indegree {tip_outdegree,tip_indegree}")
-    graph, total_prune_outdegree, total_prune_indegree = (
-        de_bruijn.remove_graph_all_tips(graph, k)
+    graph, total_prune_tips, total_bubbles_removed = de_bruijn.remove_all_errors(
+        graph, k
     )
-    print(f"pruned {total_prune_outdegree + total_prune_indegree} nodes")
+    print(f"pruned {total_prune_tips} nodes")
+    print(f"removed {total_bubbles_removed} nodes in bubbles")
     # de_bruijn.visualize_graph(graph, "./graph_output/graph_output_covidfq")
 
 
@@ -184,10 +185,29 @@ def test_find_bubbles():
     de_bruijn.visualize_graph(graph, "./test_graph_tip")
 
 
-def test_find_highest_weight_children():
+def test_find_lowest_weight_children():
     children = {"ATCAA": 1, "ATCAT": 3, "TTTTT": 5}
-    max_weight = de_bruijn.find_highest_weight_children(children)
+    max_weight = de_bruijn.find_lowest_weight_children(children)
     print(max_weight)
+
+
+def test_remove_node_graph():
+    all_read_tips = [
+        "AAGCCGATCAT",
+        "CTCGGATCA",
+        "ATCATCGGTCA",
+        "ATCATGGTCA",
+        "GATCAAGGTCA",  # bubble GATCA
+        "GGTCACG",
+        "GATCAT",  # this will make GATCA -> ATCAT weight = 2
+        "GATCATG",  # this will make GATCA -> ATCAT weight = 3 and ATCAT -> TCATG weight = 2
+        "GATCAGG",  # this will make GATCA -> ATCAG weight = 1
+        "GATCAA",  # will make GATCA -> ATCAA weight = 2
+    ]
+    graph = de_bruijn.create_graph_all_reads(all_read_tips, 5)
+
+    graph = de_bruijn.remove_node_from_graph("GATCA", graph)
+    de_bruijn.visualize_graph(graph, "./test_graph")
 
 
 def test_remove_bubbles():
@@ -200,11 +220,32 @@ def test_remove_bubbles():
         "GGTCACG",
         "GATCAT",  # this will make GATCA -> ATCAT weight = 2
         "GATCATG",  # this will make GATCA -> ATCAT weight = 3 and ATCAT -> TCATG weight = 2
+        "GATCAGG",  # this will make GATCA -> ATCAG weight = 1
+        "GATCAA",  # will make GATCA -> ATCAA weight = 2
     ]
     graph = de_bruijn.create_graph_all_reads(all_read_tips, 5)
 
-    print(de_bruijn.remove_bubble(graph))
-    # print(de_bruijn.find_tip(graph, 5))
+    print(de_bruijn.remove_bubble(graph, 5))
+
+    de_bruijn.visualize_graph(graph, "./test_graph")
+
+
+def test_remove_all_errors():
+    all_read_tips = [
+        "AAGCCGATCAT",
+        "CTCGGATCA",
+        "ATCATCGGTCA",
+        "ATCATGGTCA",
+        "GATCAAGGTCA",  # bubble GATCA
+        "GGTCACG",
+        "GATCAT",  # this will make GATCA -> ATCAT weight = 2
+        "GATCATG",  # this will make GATCA -> ATCAT weight = 3 and ATCAT -> TCATG weight = 2
+        "GATCAGG",  # this will make GATCA -> ATCAG weight = 1
+        "GATCAA",  # will make GATCA -> ATCAA weight = 2
+    ]
+    graph = de_bruijn.create_graph_all_reads(all_read_tips, 5)
+
+    print(de_bruijn.remove_all_errors(graph, 5))
 
     de_bruijn.visualize_graph(graph, "./test_graph")
 
@@ -214,7 +255,7 @@ def main():
     # test_one_graph_read()
     # test_all_graph_read()
     # test_degree_zero()
-    # test_graph_progress()
+    test_graph_progress()
     # test_all_graph_errors()
     # test_possible_inoutgoing()
     # test_find_tips()
@@ -222,8 +263,10 @@ def main():
     # test_remove_all_tips()
     # test_out_degree_greater_zero()
     # test_find_bubbles()
-    # test_find_highest_weight_children()
-    test_remove_bubbles()
+    # test_find_lowest_weight_children()
+    # test_remove_node_graph()
+    # test_remove_bubbles()
+    # test_remove_all_errors()
 
 
 if __name__ == "__main__":

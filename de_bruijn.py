@@ -172,23 +172,6 @@ def visualize_graph(graph: dict, output_file):
 
 
 # =============== errors tip ====================
-def find_tip(graph, k):
-    """find all tip nodes in the graph"""
-    nodes_indegree_zero = find_all_indegree_zero(graph)
-    nodes_outdegree_zero = find_all_outdegree_zero(graph)
-
-    all_potential_tips = nodes_indegree_zero + nodes_outdegree_zero
-    # print(f"nodes_indegree_zero {nodes_indegree_zero}")
-    # print(f"nodes_outdegree_zero {nodes_outdegree_zero}")
-    # print(f"all potential tips: {all_potential_tips}")
-
-    tip_outdegree = find_tip_outdegree_zero(graph, nodes_outdegree_zero, k)
-    tip_indegree = find_tip_indegree_zero(graph, nodes_indegree_zero, k)
-    # print(f"tip outdegree zero: {tip_outdegree}")
-    # print(f"tip indegree zero: {tip_indegree}")
-    return tip_outdegree, tip_indegree
-
-
 def remove_graph_all_tips(graph, k):
     """remove tips from the graph"""
     tip_outdegree, tip_indegree = find_tip(graph, k)
@@ -211,6 +194,23 @@ def remove_graph_all_tips(graph, k):
         total_tips = len(tip_outdegree) + len(tip_indegree)
 
     return graph, total_prune_outdegree, total_prune_indegree
+
+
+def find_tip(graph, k):
+    """find all tip nodes in the graph"""
+    nodes_indegree_zero = find_all_indegree_zero(graph)
+    nodes_outdegree_zero = find_all_outdegree_zero(graph)
+
+    all_potential_tips = nodes_indegree_zero + nodes_outdegree_zero
+    # print(f"nodes_indegree_zero {nodes_indegree_zero}")
+    # print(f"nodes_outdegree_zero {nodes_outdegree_zero}")
+    # print(f"all potential tips: {all_potential_tips}")
+
+    tip_outdegree = find_tip_outdegree_zero(graph, nodes_outdegree_zero, k)
+    tip_indegree = find_tip_indegree_zero(graph, nodes_indegree_zero, k)
+    # print(f"tip outdegree zero: {tip_outdegree}")
+    # print(f"tip indegree zero: {tip_indegree}")
+    return tip_outdegree, tip_indegree
 
 
 def remove_tip_outdegree(tip_outdegree, graph):
@@ -337,50 +337,80 @@ def find_parent(graph, target_node):
 
 
 # ============= errors bubbles =============
-def remove_bubble(graph):
-    potential_bubbles = find_bubble(graph)
-    print(f"potential bubbles: {potential_bubbles}")
-    for bubble in potential_bubbles:
-        max_child = find_highest_weight_children(graph[bubble])
-        print(f"bubble: {bubble}, max_child: {max_child}")
+def remove_bubble(graph, k):
+    total_bubbles_removed = 0
+    # identify bubbles w/ bfs
+    potential_bubbles = find_bubble(graph, k)
+    # loop until there's no more bubbles
+    while len(potential_bubbles) > 0:
+        print(f"potential bubbles: {potential_bubbles}")
+        for bubble in potential_bubbles:
+            # find edge w/ lowest weight
+            min_child = find_lowest_weight_children(graph[bubble])
+            print(f"bubble: {bubble}, min_child: {min_child}")
+
+            # delete the edge w/ lowest weight
+            graph = remove_node_from_graph(min_child, graph)
+            total_bubbles_removed += 1
+
+            # prune any tips
+            graph, total_prune_outdegree, total_prune_indegree = remove_graph_all_tips(
+                graph, k
+            )
+
+            total_bubbles_removed += total_prune_indegree + total_prune_outdegree
+        print(f"graph after removing bubble: {graph}")
+        # repeat until no bubbles exist
+        potential_bubbles = find_bubble(graph, k)
+
+    return graph, total_bubbles_removed
 
 
-def find_highest_weight_children(children: dict):
+def find_lowest_weight_children(children: dict):
     """
-    return the children with the highest weight
-    e.g., "ATCAT"
+    return the children with the lowes weight
+    output: e.g., "ATCAT"
     """
-    max_weight = 0
-    max_node = None
+    min_weight = sys.maxsize
+    min_node = None
     curr_weight = 0
     for children, weight in children.items():
         curr_weight = weight
-        if curr_weight > max_weight:
-            max_weight = curr_weight
-            max_node = children
+        if curr_weight < min_weight:
+            min_weight = curr_weight
+            min_node = children
 
-    return max_node
+    return min_node
 
 
-def find_bubble(graph):
+def find_bubble(graph, k):
     """
     find potential bubbles in nodes with outdegree > 1
     return value: dict of bubbles, where key: (startbubble node, end bubble node)
     """
     potential_bubbles = {}
+    result = None
     outdegree_greater_zero = find_all_outdegree_greater_zero(graph)
+    print(f"outdegree_greater_zero {outdegree_greater_zero}")
     for node in outdegree_greater_zero:
-        result = traverse_find_bubble_iterative(graph, node)
-        potential_bubbles[node] = result
+        if node in graph:
+            print(f"\nNode: {node}\n")
+            result = traverse_find_bubble_iterative(graph, node, k)
+        if result:
+            potential_bubbles[node] = result
+
+        result = None
 
     return potential_bubbles
 
 
-def traverse_find_bubble_iterative(graph, start_node):
+def traverse_find_bubble_iterative(graph, start_node, k):
     visited = []  # track visited nodes
     queue = deque([start_node])  # init queue
     end_node = None
-    while queue:  # while nodes still exist to be processed
+    count = 0
+    # while nodes still exist to be processed or if count < k (to break any potential cycles)
+    while queue:
         node = queue.popleft()  # dequeue
 
         if node not in visited:  # check if node has been visited before
@@ -396,6 +426,7 @@ def traverse_find_bubble_iterative(graph, start_node):
             # print(f"node {node} has been visited")
             return (start_node, end_node)
 
+        count += 1
     return None
 
 
@@ -413,6 +444,27 @@ def find_all_outdegree_greater_zero(graph):
 
 def get_node_outdegree(graph, node):
     return len(graph[node])
+
+
+def remove_node_from_graph(node, graph):
+    """given a node, remove it from the graph,
+    first will delete edges that's pointing to this node,
+    then, delete the node itself
+    """
+    parents = find_parent(graph, node)
+    for parent in parents:
+        del graph[parent][node]  # delete the parent's edge pointing to the node
+    del graph[node]  # delete the node itself
+
+    return graph
+
+
+# =============== all errors ================
+def remove_all_errors(graph, k):
+    graph, total_prune_outdegree, total_prune_indegree = remove_graph_all_tips(graph, k)
+    graph, total_bubbles_removed = remove_bubble(graph, k)
+
+    return graph, (total_prune_indegree + total_prune_outdegree), total_bubbles_removed
 
 
 # =============== contigs ===================
