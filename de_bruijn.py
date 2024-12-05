@@ -100,7 +100,7 @@ def edit_graph_both_dont_exist(graph, kmer_1, kmer_2):
     graph[kmer_2] = {}
 
 
-def create_graph(curr_graph, all_kmers):
+def create_graph(curr_graph, all_kmers, all_kmers_reverse):
     """
     STEPS:
     1) Take contiguos pairs of k-mers. Vi, Vj, Eij
@@ -112,10 +112,16 @@ def create_graph(curr_graph, all_kmers):
     graph = curr_graph
     index = 0
     check_result = None
-
+    count = 0
     while index + 1 < len(all_kmers):
-        kmer_1 = all_kmers[index]
-        kmer_2 = all_kmers[index + 1]
+        if count % 2 == 0:
+            kmer_1 = all_kmers[index]
+            kmer_2 = all_kmers[index + 1]
+        else:
+            kmer_1 = all_kmers_reverse[index]
+            kmer_2 = all_kmers_reverse[index + 1]
+            index += 1
+
         check_result = check_node_in_graph(graph, kmer_1, kmer_2)
         # print(check_result)
         if check_result == (kmer_1, kmer_2):
@@ -137,9 +143,8 @@ def create_graph(curr_graph, all_kmers):
             # dot.node(kmer_1)
             # dot.node(kmer_2)
             # weight = 1
-
+        count += 1
         # print(f"kmer1: {kmer_1}, kmer2: {kmer_2}, graph: {graph}\n")
-        index += 1
 
         # dot.edge(kmer_1, kmer_2, label=str(weight))
         # print(graph)
@@ -498,21 +503,28 @@ def create_graph_list_reads(all_reads, k):
     return curr_graph
 
 
+def get_reverse_complement_kmers(k, sequence):
+    rev_comp_sequence = str(Seq(sequence).reverse_complement())
+    return create_possible_kmers(k, rev_comp_sequence)
+
+
 def create_graph_two_read(graph, read, k):
     to_seq = Seq(read)
+
     kmers = create_possible_kmers(k, str(to_seq))
     # print(f"kmers len: {len(kmers)}")
-    graph = create_graph(graph, kmers)
+    # graph = create_graph(graph, kmers)
 
-    reverse_kmers = create_possible_kmers(k, str(to_seq.reverse_complement()))
+    reverse_kmers = get_reverse_complement_kmers(k, str(to_seq))
     # print(f"kmers len: {len(kmers)}")
-    graph = create_graph(graph, reverse_kmers)
+    graph = create_graph(graph, kmers, reverse_kmers)
 
     return graph
 
 
 def create_graph_file_reads(read_file, k):
     curr_graph = {}
+    len_read = 0
     with open(read_file) as reads:
         # Count all records in the file so we know to track
         # overall progress (FASTQ has 4 lines per record).
@@ -527,9 +539,11 @@ def create_graph_file_reads(read_file, k):
                 "Loading reads", total=num_reads, unit="reads", width=40
             )
             for read in SeqIO.parse(reads, "fastq"):
-                # print(f"read len: {len(read)}")
+                len_read += len(read)
                 create_graph_two_read(curr_graph, read.seq, k)
                 progress.update(task, advance=1)
+
+            # print(f"read len: {len_read}")
 
     # print(f"Processed {num_reads} reads.")
 
@@ -599,6 +613,7 @@ def main(reads, kmer_size):
     init_output_nodes = len(find_all_outdegree_zero(graph))
 
     graph, pruned_tips, removed_bubbles = remove_all_errors(graph, k_file)
+    # visualize_graph(graph, "./test_graph_tip_after_error")
 
     output_nodes_remain = len(find_all_outdegree_zero(graph))
     input_nodes_remain = len(find_all_indegree_zero(graph))

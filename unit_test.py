@@ -1,4 +1,5 @@
 import de_bruijn
+from Bio.Seq import Seq
 
 
 def test_possible_kmers():
@@ -136,15 +137,21 @@ def test_find_tips():
 
 
 def test_remove_all_tips():
-    all_read_tips = ["AAGCCGATCAT", "CTCGGATCA", "ATCATCG", "ATCATGGTCA"]
-    graph = de_bruijn.create_graph_list_reads(all_read_tips, 5)
+    k_file = 37
+    # k_list = 5
+    file_name = "./simulated-reads/covid.fasta_mytest_errortips.fq"
+    # graph = de_bruijn.create_graph_list_reads(all_read_tips, k_file)
+
+    graph, _ = de_bruijn.create_graph_file_reads(file_name, k_file)
+    # de_bruijn.visualize_graph(graph, "./test_graph_tip_before_error_reverse")
+
     graph, total_prune_outdegree, total_prune_indegree = (
-        de_bruijn.remove_graph_all_tips(graph, 5)
+        de_bruijn.remove_graph_all_tips(graph, k_file)
     )
+    total_tips_pruned = total_prune_indegree + total_prune_outdegree
 
-    print(f"pruned {total_prune_outdegree + total_prune_indegree} nodes")
-
-    de_bruijn.visualize_graph(graph, "./test_graph_tip")
+    print(f"total_tips_pruned {total_tips_pruned}")
+    # de_bruijn.visualize_graph(graph, "./test_graph_tip_after_error_reverse")
 
 
 def test_out_degree_greater_zero():
@@ -274,6 +281,13 @@ def test_remove_all_errors():
     # de_bruijn.visualize_graph(graph, "./test_graph")
 
 
+def reverse_comp_test():
+    string_seq = Seq(
+        "TCACATTAGTAACAAAGGCTGTCCACCATGCGAAGTGTCCCATGAGCTTATAAAGATCAGCATTCCAAGAATGTTCTGTTATCTTTATAGCCACGGAACCTCCAAGAGCTAGCTTTTGTTGTATAAACCCACAAATGTAAGTGAAAAAACCCTCTTTAGAGTCATTTTCTTTTGTAACATTTTTAGTCTTAGGGTCGTACATATCACTAATAATGAGATCCCATTTATTAGCTGTATGTACAGTTGCACA"
+    )
+    print(string_seq.reverse_complement())
+
+
 def main():
     # test_possible_kmers()
     # test_one_graph_read()
@@ -284,13 +298,14 @@ def main():
     # test_possible_inoutgoing()
     # test_find_tips()
     # test_find_parent()
-    # test_remove_all_tips()
+    test_remove_all_tips()
     # test_out_degree_greater_zero()
     # test_find_bubbles()
     # test_find_lowest_weight_children()
     # test_remove_node_graph()
     # test_remove_bubbles()
-    test_remove_all_errors()
+    # test_remove_all_errors()
+    # reverse_comp_test()
 
 
 if __name__ == "__main__":
