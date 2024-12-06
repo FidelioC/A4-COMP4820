@@ -7,7 +7,7 @@ from Bio.Seq import Seq
 import os
 import click
 
-# from resource import getrusage, RUSAGE_SELF
+from resource import getrusage, RUSAGE_SELF
 
 ALL_POSSIBLE_CHARS = ["A", "C", "G", "T"]
 
@@ -347,18 +347,20 @@ def remove_bubble(graph, k):
 
             # delete the edge w/ lowest weight
             graph = remove_node_from_graph(min_child, graph)
-            print(f"removing bubble at: {min_child}")
+            # print(f"removing bubble at: {min_child}")
             total_bubbles_removed += 1
 
             # prune any tips
             graph, total_prune_outdegree, total_prune_indegree = remove_graph_all_tips(
                 graph, k
             )
-
+            # print("remove_graph_all_tips finished")
             total_bubbles_removed += total_prune_indegree + total_prune_outdegree
         # print(f"graph after removing bubble: {graph}")
         # repeat until no bubbles exist
         potential_bubbles = find_bubble(graph)
+        # print("remove potential bubbles finished")
+    # print("remove bubbles finished")
 
     return graph, total_bubbles_removed
 
@@ -407,6 +409,7 @@ def traverse_find_bubble_iterative(graph, start_node):
     end_node = None
 
     while queue:  # until queue is empty
+        # print(queue)
         node = queue.popleft()  # next node
 
         if node in visited:  # node has been revisited
@@ -418,7 +421,6 @@ def traverse_find_bubble_iterative(graph, start_node):
 
         visited.add(node)  # Mark the node as visited
 
-        # check for branching (outdegree > 1) and ignore start_node
         if get_node_outdegree(graph, node) > 1 and node != start_node:
             return None
 
@@ -476,7 +478,14 @@ def create_contigs(graph: dict):
     for node in indegree_zero:
         curr_node = node
         contig = curr_node
-        while get_node_outdegree(graph, curr_node) >= 1:
+        visited_in_contig = set()
+
+        # traverse nodes and also handle cycle
+        while (
+            get_node_outdegree(graph, curr_node) >= 1
+            and curr_node not in visited_in_contig
+        ):
+            visited_in_contig.add(curr_node)
             neighbours = graph[curr_node]
             next_node = max(neighbours, key=neighbours.get)
             contig += next_node[-1]  # add last char to contig
@@ -621,6 +630,7 @@ def main(reads, kmer_size):
     init_output_nodes = len(find_all_outdegree_zero(graph))
     # visualize_graph(graph, "./test_graph_main_beforeerror")
     graph, pruned_tips, removed_bubbles = remove_all_errors(graph, k_file)
+    print("remove all errors finished")
     # visualize_graph(graph, "./test_graph_main")
 
     output_nodes_remain = len(find_all_outdegree_zero(graph))
