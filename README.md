@@ -15,8 +15,7 @@ a. `The value for k=13 is specifically chosen because it will introduce cycles i
 - `Find a part of the original genome’s sequence that causes this cycle and explain why it causes a cycle (hint: it’s at the end of the sequence).`
 - `In your implementation: do you break the cycle during bubble popping or are you breaking the cycle somewhere else (e.g., in reconstructing the sequence)? Why did you choose to do it this way?`
 
-Answer:
-![](cycle_genome.png)
+![](./pictures/cycle_genome.png)
 
 - As shown in the picture above, a cycle exists because of the repeated sequence of 'A's. Since the length of this repeated sequence is greater than k, the k-mers generated from it will produce identical nodes appearing consecutively,forming a loop where the node 'AAA...A' cycles back to itself.
 
@@ -28,8 +27,15 @@ Answer:
 
 b. `How does the runtime performance of your implementation change as you adjust the value of k? Why does the runtime performance change as you adjust k? Is this what you expected? Why or why not? `
 
-- klala
+![](./pictures/time.png)
+
+- Based on the graph above, we can see that the runtime of the program increases as we increase the value of k. Yes, this is what I expected. In my implementation, I believe the part that take the longest amount of time is handling the errors. So, as we increase the amount of k, this also means that tips and bubbles could potentially have longer chain of nodes. Therefore, the function that handles bubbles/ tips removal could potential take a longer amount of time. Furthermore,
 
 c. `How does the memory usage of your implementation change as you adjust the value of k? Why does the memory usage change as you adjust k (if at all)? Is this what you expected? Why or why not? `
 
+![](./pictures/memory.png)
+
+- Based on the graph above, the memory usage decreases as we increase the value of k. Yes, this is what I expected. In my opinion, since we increase k
+
 d.`How is the output (contigs) from your implementation affected by the change in k? Is this what you expected? Why or why not?`
+![](./pictures/time.png)

@@ -630,7 +630,7 @@ def main(reads, kmer_size):
     init_output_nodes = len(find_all_outdegree_zero(graph))
     # visualize_graph(graph, "./test_graph_main_beforeerror")
     graph, pruned_tips, removed_bubbles = remove_all_errors(graph, k_file)
-    print("remove all errors finished")
+    # print("remove all errors finished")
     # visualize_graph(graph, "./test_graph_main")
 
     output_nodes_remain = len(find_all_outdegree_zero(graph))
