@@ -487,6 +487,9 @@ def create_contigs(graph: dict):
         ):
             visited_in_contig.add(curr_node)
             neighbours = graph[curr_node]
+
+            # here, if there's still a node with outdegree > 1,
+            # I will arbitrarily pick the highest weight.
             next_node = max(neighbours, key=neighbours.get)
             contig += next_node[-1]  # add last char to contig
             curr_node = next_node

@@ -2,7 +2,9 @@
 
 ## How to Run
 
-command-line arguments:
+NOTE: One run could take about 1-5 minutes. So, please wait for the program to be finished.
+
+Command-line arguments:
 
 - The filename of the read set (a file in FASTQ format) (--reads; required, no default value).
   The
@@ -17,6 +19,20 @@ Example:
 ### Commands Used
 
 `hyperfine "python de_bruijn.py --reads ./simulated-reads/covid.fasta_simulated-errors-tips-bubbles.fq --kmer-size 13" "python de_bruijn.py --reads ./simulated-reads/covid.fasta_simulated-errors-tips-bubbles.fq --kmer-size 37" "python de_bruijn.py --reads ./simulated-reads/covid.fasta_simulated-errors-tips-bubbles.fq --kmer-size 51"`
+
+### Sample Output For Each Command
+
+#### kmer = 13
+
+![](./pictures/kmer13.png)
+
+#### kmer = 37
+
+![](./pictures/kmer37.png)
+
+#### kmer = 51
+
+![](./pictures/kmer51.png)
 
 ### Experiment 1 answers
 
@@ -39,13 +55,29 @@ b. `How does the runtime performance of your implementation change as you adjust
 
 ![](./pictures/time.png)
 
-- Based on the graph above, we can see that the runtime of the program increases as we increase the value of k. Yes, this is what I expected. In my implementation, I believe the part that take the longest amount of time is handling the errors. So, as we increase the amount of k, this also means that tips and bubbles could potentially have longer chain of nodes. Therefore, the function that handles bubbles/ tips removal could potential take a longer amount of time. Furthermore,
+- Based on the graph above, we can see that the highest runtime occurs when k = 51, and the lowest is when k = 13. The runtime performance change as we adjust k, because the structure of the graph depends directly on the k-mers generated,which in turn depend on the k-size. Furthermore, as we change the k size, it is also important to note that the structure of the errors (bubbles and tips) also changes with k which impacts the runtime. Yes, this is what I expected.
+
+  As k increases, each node in the graph represents a longer sequence. During graph creation, the program spends more time checking if each pair of nodes already exists in the graph. Since larger k-sizes result in longer sequences, the time required for these operations increases, contributing to longer runtimes.
+
+  Furthermore, k also influences the behaviour of errors in the graph, such as bubbles and tips. So, with the larget k-size this means there could potentialy be more unique nodes in the graph, which could result in a longer chain of tips and bubbles. Thus, longer tips to be pruned and bubbles to be popped, which will increase the runtime performance.
 
 c. `How does the memory usage of your implementation change as you adjust the value of k? Why does the memory usage change as you adjust k (if at all)? Is this what you expected? Why or why not? `
 
 ![](./pictures/memory.png)
 
-- Based on the graph above, the memory usage decreases as we increase the value of k. Yes, this is what I expected. In my opinion, since we increase k
+- Based on the graph above, we can see that the highest memory usage occurs when k = 51, and the lowest occurs when k = 13. The memory usage changes as we adjust k, for the same reasons mentioned in part b. The k-size directly affects the structure of the graph and also the structure of errors. Yes, this is what I expected.
+
+  Why? Because as we increase the size of k, this means that a node will have a longer sequence, resulting in a larger hash value that needs to be stored in the dictionary (since I used a dictionary for the graph storage). This requires storing bigger sequences in memory, thus leading to larger memory usage.
+
+  Furthermore, in terms of errors, as stated previously, a larger k-size could result in a longer chain of tips and bubbles. Thus, more nodes and edges with long sequences need to be stored in the graph, resulting in increased memory usage.
 
 d.`How is the output (contigs) from your implementation affected by the change in k? Is this what you expected? Why or why not?`
-![](./pictures/time.png)
+![](./pictures/contigs.png)
+
+NOTE: in create_contigs, I explained that after error removals, if the graph still has a node that has outdegree > 1, I arbitrarily choose the path with the highest weight for creating the contigs.
+
+- Based on the graph above, we can see that as k increases, the number of contigs generated decreases. I believe that the change in k affects the contig output because of how nodes, edges, and errors are created in the graph, therfore changing the structure of the graph. Yes, this is what I expected.
+
+  Why? From what I expect, I believe that a graph with a lower k-size will potentially have more tips and bubbles scattered across the graph. Shorter k-mers are more likely to result in the assembler generating different nodes and edges, leading to the creation of smaller contigs across the graph.
+
+  On the other hand, a larger k-size represents longer sequences. It is less likely for the graph to generate more nodes and edges since there are fewer possible k-mers that are used to make the nodes. Thus, the assembler is less likely to generate small and scattered contigs.
