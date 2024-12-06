@@ -2,6 +2,16 @@
 
 ## How to Run
 
+command-line arguments:
+
+- The filename of the read set (a file in FASTQ format) (--reads; required, no default value).
+  The
+- k-mer size (--kmer-size; optional, default value 37).
+
+Example:
+
+`python de_bruijn.py --reads ./simulated-reads/covid.fasta_simulated-errors-tips-bubbles.fq --kmer-size 51`
+
 ## Experiment 1
 
 ### Commands Used
