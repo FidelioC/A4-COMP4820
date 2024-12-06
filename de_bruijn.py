@@ -606,7 +606,7 @@ def print_output(
     for id, contig in contigs.items():
         print(f"* {id}-covid.fq ({len(contig)}bp)")
 
-    # mem_usage()
+    mem_usage()
 
 
 def print_settings(reads, kmer_size):
