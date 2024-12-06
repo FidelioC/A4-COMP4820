@@ -6,7 +6,8 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 import os
 import click
-from resource import getrusage, RUSAGE_SELF
+
+# from resource import getrusage, RUSAGE_SELF
 
 ALL_POSSIBLE_CHARS = ["A", "C", "G", "T"]
 
@@ -335,7 +336,7 @@ def find_parent(graph, target_node):
 def remove_bubble(graph, k):
     total_bubbles_removed = 0
     # identify bubbles w/ bfs
-    potential_bubbles = find_bubble(graph, k)
+    potential_bubbles = find_bubble(graph)
     # loop until there's no more bubbles
     while len(potential_bubbles) > 0:
         # print(f"potential bubbles: {potential_bubbles}")
@@ -346,6 +347,7 @@ def remove_bubble(graph, k):
 
             # delete the edge w/ lowest weight
             graph = remove_node_from_graph(min_child, graph)
+            print(f"removing bubble at: {min_child}")
             total_bubbles_removed += 1
 
             # prune any tips
@@ -356,7 +358,7 @@ def remove_bubble(graph, k):
             total_bubbles_removed += total_prune_indegree + total_prune_outdegree
         # print(f"graph after removing bubble: {graph}")
         # repeat until no bubbles exist
-        potential_bubbles = find_bubble(graph, k)
+        potential_bubbles = find_bubble(graph)
 
     return graph, total_bubbles_removed
 
@@ -378,7 +380,7 @@ def find_lowest_weight_children(children: dict):
     return min_node
 
 
-def find_bubble(graph, k):
+def find_bubble(graph):
     """
     find potential bubbles in nodes with outdegree > 1
     return value: dict of bubbles, where key: (startbubble node, end bubble node)
@@ -390,7 +392,7 @@ def find_bubble(graph, k):
     for node in outdegree_greater_zero:
         if node in graph:
             # print(f"\nNode: {node}\n")
-            result = traverse_find_bubble_iterative(graph, node, k)
+            result = traverse_find_bubble_iterative(graph, node)
         if result:
             potential_bubbles[node] = result
 
@@ -399,27 +401,33 @@ def find_bubble(graph, k):
     return potential_bubbles
 
 
-def traverse_find_bubble_iterative(graph, start_node, k):
-    visited = []  # track visited nodes
-    queue = deque([start_node])  # init queue
+def traverse_find_bubble_iterative(graph, start_node):
+    visited = set()
+    queue = deque([start_node])  # Initialize queue with start node
     end_node = None
-    # while nodes still exist to be processed
-    while queue:
-        node = queue.popleft()  # dequeue
 
-        if node not in visited:  # check if node has been visited before
-            visited.append(node)
-            # print(node, end=" ")
+    while queue:  # until queue is empty
+        node = queue.popleft()  # next node
 
-            # enqueue children of curr node
-            for neighbor in graph[node]:
-                queue.append(neighbor)
-        else:  # node merged back
+        if node in visited:  # node has been revisited
+            if node == start_node:
+                # if we cycle back to the start_node, it's not a valid bubble
+                return None
             end_node = node
-            # print(f"node {node} has been visited")
-            return (start_node, end_node)
+            return (start_node, end_node)  # found bubble
 
-    return None
+        visited.add(node)  # Mark the node as visited
+
+        # check for branching (outdegree > 1) and ignore start_node
+        if get_node_outdegree(graph, node) > 1 and node != start_node:
+            return None
+
+        # enqueue unvisited neighbors
+        for neighbor in graph[node]:
+            if neighbor not in visited:
+                queue.append(neighbor)
+
+    return None  # no bubble found
 
 
 def find_all_outdegree_greater_zero(graph):
@@ -586,7 +594,7 @@ def print_output(
     for id, contig in contigs.items():
         print(f"* {id}-covid.fq ({len(contig)}bp)")
 
-    mem_usage()
+    # mem_usage()
 
 
 def print_settings(reads, kmer_size):
@@ -611,9 +619,9 @@ def main(reads, kmer_size):
     init_nodes = len(graph)
     init_input_nodes = len(find_all_indegree_zero(graph))
     init_output_nodes = len(find_all_outdegree_zero(graph))
-
+    # visualize_graph(graph, "./test_graph_main_beforeerror")
     graph, pruned_tips, removed_bubbles = remove_all_errors(graph, k_file)
-    # visualize_graph(graph, "./test_graph_tip_after_error")
+    # visualize_graph(graph, "./test_graph_main")
 
     output_nodes_remain = len(find_all_outdegree_zero(graph))
     input_nodes_remain = len(find_all_indegree_zero(graph))

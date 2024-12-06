@@ -288,6 +288,18 @@ def reverse_comp_test():
     print(string_seq.reverse_complement())
 
 
+def test_cycles():
+    k_file = 13
+    # k_list = 5
+    file_name = "./simulated-reads/covid.fasta_mytest_errorbubble.fq"
+    # graph = de_bruijn.create_graph_list_reads(all_read_tips, k_file)
+    graph, _ = de_bruijn.create_graph_file_reads(file_name, k_file)
+    de_bruijn.visualize_graph(graph, "test_graph_cycles")
+    de_bruijn.remove_graph_all_tips(graph, k_file)
+    de_bruijn.remove_bubble(graph, k_file)
+    de_bruijn.visualize_graph(graph, "test_graph_cycles_aftererror")
+
+
 def main():
     # test_possible_kmers()
     # test_one_graph_read()
@@ -298,7 +310,7 @@ def main():
     # test_possible_inoutgoing()
     # test_find_tips()
     # test_find_parent()
-    test_remove_all_tips()
+    # test_remove_all_tips()
     # test_out_degree_greater_zero()
     # test_find_bubbles()
     # test_find_lowest_weight_children()
@@ -306,6 +318,7 @@ def main():
     # test_remove_bubbles()
     # test_remove_all_errors()
     # reverse_comp_test()
+    test_cycles()
 
 
 if __name__ == "__main__":
